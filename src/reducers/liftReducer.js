@@ -9,10 +9,17 @@ const defaultState = Object.freeze({
   passengersCount: 0,
   doorState: doorStateEnum.CLOSED,
   sensorState: sensorStateEnum.OFF,
+  waitingFloor: new Set(),
 });
 
 export default function liftReducer(state = defaultState, action) {
   switch (action.type) {
+    case liftActions.BUTTON_PRESS: {
+      return Object.freeze({
+        ...state,
+        waitingFloor: new Set([...state.waitingFloor]).add(action.data),
+      });
+    }
     case liftActions.MOVE_UP: {
       return Object.freeze({
         ...state,
@@ -59,6 +66,14 @@ export default function liftReducer(state = defaultState, action) {
       return Object.freeze({
         ...state,
         passengersCount: state.passengersCount - 1,
+      });
+    }
+    case liftActions.REACHED_FLOOR: {
+      const newWaitingFloor = new Set([...state.waitingFloor]);
+      newWaitingFloor.delete(action.floor);
+      return Object.freeze({
+        ...state,
+        waitingFloor: newWaitingFloor,
       });
     }
     case reducerActions.RESET: {

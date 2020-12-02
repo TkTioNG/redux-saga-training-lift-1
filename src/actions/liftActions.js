@@ -12,6 +12,8 @@ export const DOOR_SENSOR_ON = '@lift/DOOR_SENSOR_ON';
 export const INCREMENT_PASSENGERS = '@lift/INCREMENT_PASSENGERS';
 export const DECREMENT_PASSENGERS = '@lift/DECREMENT_PASSENGERS';
 
+export const REACHED_FLOOR = '@lift/REACHED_FLOOR';
+
 export const buttonPress = ({ button, data }) => ({
   type: BUTTON_PRESS,
   button,
@@ -48,4 +50,9 @@ export const incrementPassengers = () => ({
 
 export const decrementPassengers = () => ({
   type: DECREMENT_PASSENGERS,
+});
+
+export const reachedFloor = ({ floor }) => ({
+  type: REACHED_FLOOR,
+  floor,
 });
