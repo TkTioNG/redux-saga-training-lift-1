@@ -1,6 +1,7 @@
 import * as liftActions from '../actions/liftActions';
 import * as reducerActions from '../actions/reducerActions';
 import doorStateEnum from '../enums/doorStateEnum';
+import liftStateEnum from '../enums/liftStateEnum';
 import sensorStateEnum from '../enums/sensorStateEnum';
 
 const defaultState = Object.freeze({
@@ -9,7 +10,13 @@ const defaultState = Object.freeze({
   passengersCount: 0,
   doorState: doorStateEnum.CLOSED,
   sensorState: sensorStateEnum.OFF,
+  liftState: liftStateEnum.IDLE,
   waitingFloor: new Set(),
+  waitingFloorSet: {
+    upFloor: new Set(),
+    downFloor: new Set(),
+    requestFloor: new Set(),
+  },
 });
 
 export default function liftReducer(state = defaultState, action) {
@@ -18,6 +25,33 @@ export default function liftReducer(state = defaultState, action) {
       return Object.freeze({
         ...state,
         waitingFloor: new Set([...state.waitingFloor]).add(action.data),
+      });
+    }
+    case liftActions.ADD_UP_FLOOR: {
+      return Object.freeze({
+        ...state,
+        waitingFloorSet: {
+          ...state.waitingFloorSet,
+          upFloor: new Set([...state.waitingFloorSet.upFloor]).add(action.floor),
+        },
+      });
+    }
+    case liftActions.ADD_DOWN_FLOOR: {
+      return Object.freeze({
+        ...state,
+        waitingFloorSet: {
+          ...state.waitingFloorSet,
+          downFloor: new Set([...state.waitingFloorSet.downFloor]).add(action.floor),
+        },
+      });
+    }
+    case liftActions.ADD_REQUEST_FLOOR: {
+      return Object.freeze({
+        ...state,
+        waitingFloorSet: {
+          ...state.waitingFloorSet,
+          requestFloor: new Set([...state.waitingFloorSet.requestFloor]).add(action.floor),
+        },
       });
     }
     case liftActions.MOVE_UP: {
@@ -74,6 +108,12 @@ export default function liftReducer(state = defaultState, action) {
       return Object.freeze({
         ...state,
         waitingFloor: newWaitingFloor,
+      });
+    }
+    case liftActions.SET_LIFT_STATE: {
+      return Object.freeze({
+        ...state,
+        liftState: action.state,
       });
     }
     case reducerActions.RESET: {

@@ -1,7 +1,9 @@
 import {
-  select, all, take, put, race, delay, call,
+  select, all, take, put, race, delay, call, takeEvery,
 } from 'redux-saga/effects';
 import * as liftActions from '../actions/liftActions';
+import buttonsEnum from '../enums/buttonsEnum';
+import liftStateEnum from '../enums/liftStateEnum';
 import sensorStateEnum from '../enums/sensorStateEnum';
 
 function* checkOpenFloor(currentFloor) {
@@ -81,22 +83,35 @@ function* watchLift() {
     const isIdle = yield isAnyFloorWaiting();
     if (!isIdle) {
       /* Wait for button press is there is not passenger waiting */
+      yield put(liftActions.setLiftState(liftStateEnum.IDLE));
       yield take(liftActions.BUTTON_PRESS);
     } else {
-      /* Take 4 seconds for lift to move between floor */
-      yield delay(4000);
-
       if (currentFloor === 0) {
         movingUp = true;
       }
       const moveUp = yield isHigherFloorWaiting(currentFloor);
       if (movingUp && moveUp) {
+        yield put(liftActions.setLiftState(liftStateEnum.MOVING_UP));
         yield put(liftActions.moveUp());
       } else if (currentFloor > 0) {
+        yield put(liftActions.setLiftState(liftStateEnum.MOVING_DOWN));
         yield put(liftActions.moveDown());
         movingUp = false;
       }
+      /* Take 4 seconds for lift to move between floor */
+      yield delay(4000);
     }
+  }
+}
+
+function* watchButtonPress(action) {
+  const { button, data: floor } = action;
+  if (button === buttonsEnum.CALL_UP) {
+    yield put(liftActions.addUpFloor({ floor }));
+  } else if (button === buttonsEnum.CALL_DOWN) {
+    yield put(liftActions.addDownFloor({ floor }));
+  } else {
+    yield put(liftActions.addRequestFloor({ floor }));
   }
 }
 
@@ -104,5 +119,6 @@ export default function* liftSaga() {
   /* TODO: Program your saga for lift control here. 🙂 */
   yield all([
     watchLift(),
+    takeEvery(liftActions.BUTTON_PRESS, watchButtonPress),
   ]);
 }
