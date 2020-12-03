@@ -6,20 +6,46 @@ import buttonsEnum from '../enums/buttonsEnum';
 import liftStateEnum from '../enums/liftStateEnum';
 import sensorStateEnum from '../enums/sensorStateEnum';
 
+// function* checkOpenFloor(currentFloor) {
+//   /* Check is it required to open the door in this floor */
+//   const waitingFloor = yield select(state => state.lift.waitingFloor);
+//   return waitingFloor.has(currentFloor);
+// }
+
 function* checkOpenFloor(currentFloor) {
   /* Check is it required to open the door in this floor */
-  const waitingFloor = yield select(state => state.lift.waitingFloor);
-  return waitingFloor.has(currentFloor);
+  const liftState = yield select(state => state.lift.liftState);
+  if (liftState === liftStateEnum.MOVING_UP) {
+    const waitingFloor = yield select(state => state.lift.waitingFloorSet.upFloor);
+    return waitingFloor.has(currentFloor);
+  } if (liftState === liftStateEnum.MOVING_DOWN) {
+    const waitingFloor = yield select(state => state.lift.waitingFloorSet.downFloor);
+    return waitingFloor.has(currentFloor);
+  }
+  const waitingFloorSet = yield select(state => state.lift.waitingFloorSet);
+  return waitingFloorSet.upFloor.has(currentFloor) || waitingFloorSet.downFloor.has(currentFloor);
 }
+
+// function* isAnyFloorWaiting() {
+//   /* Check if there is no passenger waiting. */
+//   const waitingFloor = yield select(state => state.lift.waitingFloor);
+//   return waitingFloor.size > 0;
+// }
 
 function* isAnyFloorWaiting() {
   /* Check if there is no passenger waiting. */
-  const waitingFloor = yield select(state => state.lift.waitingFloor);
-  return waitingFloor.size > 0;
+  const waitingFloorSet = yield select(state => state.lift.waitingFloorSet);
+  return waitingFloorSet.upFloor.size > 0 || waitingFloorSet.downFloor.size > 0;
 }
 
+// function* isHigherFloorWaiting(currentFloor) {
+//   const higherFloor = yield select(state => Math.max(...state.lift.waitingFloor));
+//   return currentFloor < 10 && currentFloor < higherFloor;
+// }
+
 function* isHigherFloorWaiting(currentFloor) {
-  const higherFloor = yield select(state => Math.max(...state.lift.waitingFloor));
+  const higherFloor = yield select(state => Math.max(...state.lift.waitingFloorSet.upFloor));
+
   return currentFloor < 10 && currentFloor < higherFloor;
 }
 
@@ -79,11 +105,10 @@ function* watchLift() {
     if (isOpenLiftFloor) {
       yield call(openLiftDoor, { floor: currentFloor });
     }
-
-    const isIdle = yield isAnyFloorWaiting();
-    if (!isIdle) {
+    const isNotIdle = yield isAnyFloorWaiting();
+    if (!isNotIdle) {
       /* Wait for button press is there is not passenger waiting */
-      yield put(liftActions.setLiftState(liftStateEnum.IDLE));
+      yield put(liftActions.setLiftState({ state: liftStateEnum.IDLE }));
       yield take(liftActions.BUTTON_PRESS);
     } else {
       if (currentFloor === 0) {
@@ -91,10 +116,10 @@ function* watchLift() {
       }
       const moveUp = yield isHigherFloorWaiting(currentFloor);
       if (movingUp && moveUp) {
-        yield put(liftActions.setLiftState(liftStateEnum.MOVING_UP));
+        yield put(liftActions.setLiftState({ state: liftStateEnum.MOVING_UP }));
         yield put(liftActions.moveUp());
       } else if (currentFloor > 0) {
-        yield put(liftActions.setLiftState(liftStateEnum.MOVING_DOWN));
+        yield put(liftActions.setLiftState({ state: liftStateEnum.MOVING_DOWN }));
         yield put(liftActions.moveDown());
         movingUp = false;
       }
@@ -111,7 +136,12 @@ function* watchButtonPress(action) {
   } else if (button === buttonsEnum.CALL_DOWN) {
     yield put(liftActions.addDownFloor({ floor }));
   } else {
-    yield put(liftActions.addRequestFloor({ floor }));
+    const currentFloor = yield select(state => state.lift.currentFloor);
+    if (floor > currentFloor) {
+      yield put(liftActions.addUpFloor({ floor }));
+    } else {
+      yield put(liftActions.addDownFloor({ floor }));
+    }
   }
 }
 

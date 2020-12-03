@@ -2,7 +2,6 @@ export const BUTTON_PRESS = '@lift/BUTTON_PRESS';
 
 export const ADD_UP_FLOOR = '@lift/ADD_UP_FLOOR';
 export const ADD_DOWN_FLOOR = '@lift/ADD_DOWN_FLOOR';
-export const ADD_REQUEST_FLOOR = '@lift/ADD_REQUEST_FLOOR';
 
 export const MOVE_UP = '@lift/MOVE_UP';
 export const MOVE_DOWN = '@lift/MOVE_DOWN';
@@ -33,11 +32,6 @@ export const addUpFloor = ({ floor }) => ({
 
 export const addDownFloor = ({ floor }) => ({
   type: ADD_DOWN_FLOOR,
-  floor,
-});
-
-export const addRequestFloor = ({ floor }) => ({
-  type: ADD_REQUEST_FLOOR,
   floor,
 });
 
