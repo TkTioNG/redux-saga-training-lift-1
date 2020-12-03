@@ -30,7 +30,7 @@ function* isAnyFloorWaiting() {
 }
 
 function* isHigherFloorWaiting(currentFloor) {
-  const higherFloor = yield select(state => Math.max(...state.lift.waitingFloorSet.upFloor));
+  const higherFloor = yield select(state => Math.max(...state.lift.waitingFloorSet.upFloor, ...state.lift.waitingFloorSet.downFloor));
   return currentFloor < 10 && currentFloor < higherFloor;
 }
 

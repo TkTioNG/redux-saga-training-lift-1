@@ -11,6 +11,7 @@ import {
 import * as liftActions from '../actions/liftActions';
 import buttonsEnum from '../enums/buttonsEnum';
 import doorStateEnum from '../enums/doorStateEnum';
+import liftStateEnum from '../enums/liftStateEnum';
 import sensorStateEnum from '../enums/sensorStateEnum';
 
 function* getStartingFloor() {
@@ -36,7 +37,7 @@ function* getDestinationFloor({ startingFloor }) {
 }
 
 function* pressUpDownButton({ startingFloor }) {
-  /* Passengers from the fround floor move up, passengers from other floors move down. */
+  /* Passengers from the ground floor move up, passengers from other floors move down. */
   if (startingFloor === 0) {
     yield put(liftActions.buttonPress({
       button: buttonsEnum.CALL_UP,
@@ -60,7 +61,7 @@ function* pressFloorButton({ destinationFloor }) {
   }));
 }
 
-function* awaitLift({ floor }) {
+function* awaitLift({ floor, goUp }) {
   const doorState = yield select(state => state.lift.doorState);
   if (doorState !== doorStateEnum.OPEN) {
     yield take(liftActions.OPEN_DOOR);
@@ -70,6 +71,14 @@ function* awaitLift({ floor }) {
   if (currentFloor !== floor) {
     yield take(liftActions.CLOSE_DOOR);
     yield awaitLift({ floor });
+  } else if (goUp != null) {
+    /* Do not enter lift if the direction is incorrect. */
+    const liftState = yield select(state => state.lift.liftState);
+    const waitingState = goUp ? liftStateEnum.MOVING_UP : liftStateEnum.MOVING_DOWN;
+    if (waitingState !== liftState) {
+      yield take(liftActions.CLOSE_DOOR);
+      yield awaitLift({ floor });
+    }
   }
 }
 
@@ -156,7 +165,7 @@ function* addPassenger() {
   /* Passenger presses button. */
   yield pressUpDownButton({ startingFloor });
   /* Passengers waits and enters the lift. */
-  yield processPassengerOutside({ startingFloor });
+  yield processPassengerOutside({ startingFloor, goUp: destinationFloor > startingFloor });
   /* Passenger presses floor button. */
   yield pressFloorButton({ destinationFloor });
   /* Passenger waits and leaves the lift. */
