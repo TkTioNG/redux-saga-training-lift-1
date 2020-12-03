@@ -18,8 +18,9 @@ function* checkOpenFloor(currentFloor) {
     const waitingFloor = yield select(state => state.lift.waitingFloorSet.downFloor);
     return waitingFloor.has(currentFloor);
   }
-  /* Do not open door if the lift is idle */
-  return false;
+  /* If lift is idle, it checks for both requests */
+  const waitingFloorSet = yield select(state => state.lift.waitingFloorSet);
+  return waitingFloorSet.upFloor.has(currentFloor) || waitingFloorSet.downFloor.has(currentFloor);
 }
 
 function* isAnyFloorWaiting() {
