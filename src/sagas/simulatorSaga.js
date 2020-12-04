@@ -27,9 +27,18 @@ function* getStartingFloor() {
 
 function* getDestinationFloor({ startingFloor }) {
   const maximumFloor = yield select(state => state.lift.maximumFloor);
-  /* Passengers from higher floors are always going to the ground floor. */
+  /* Passengers from higher floors have 60% chance to the ground floor. */
   if (startingFloor > 0) {
-    return 0;
+    if (Math.random() > 0.4) {
+      return 0;
+    }
+    let destinationFloor = Math.round(Math.random() * (maximumFloor - 1)) + 1;
+    while (destinationFloor === startingFloor) {
+      destinationFloor = Math.round(Math.random() * (maximumFloor - 1)) + 1;
+    }
+
+    /* Or 40% to go to any other floor. */
+    return destinationFloor;
   }
 
   /* Passengers from the ground floor are always going to any other floor. */
