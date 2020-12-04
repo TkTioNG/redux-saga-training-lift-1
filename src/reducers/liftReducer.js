@@ -1,6 +1,7 @@
 import * as liftActions from '../actions/liftActions';
 import * as reducerActions from '../actions/reducerActions';
 import doorStateEnum from '../enums/doorStateEnum';
+import liftStateEnum from '../enums/liftStateEnum';
 import sensorStateEnum from '../enums/sensorStateEnum';
 
 const defaultState = Object.freeze({
@@ -9,15 +10,31 @@ const defaultState = Object.freeze({
   passengersCount: 0,
   doorState: doorStateEnum.CLOSED,
   sensorState: sensorStateEnum.OFF,
-  waitingFloor: new Set(),
+  liftState: liftStateEnum.IDLE,
+  waitingFloorSet: {
+    upFloor: new Set(),
+    downFloor: new Set(),
+  },
 });
 
 export default function liftReducer(state = defaultState, action) {
   switch (action.type) {
-    case liftActions.BUTTON_PRESS: {
+    case liftActions.ADD_UP_FLOOR: {
       return Object.freeze({
         ...state,
-        waitingFloor: new Set([...state.waitingFloor]).add(action.data),
+        waitingFloorSet: {
+          ...state.waitingFloorSet,
+          upFloor: new Set([...state.waitingFloorSet.upFloor]).add(action.floor),
+        },
+      });
+    }
+    case liftActions.ADD_DOWN_FLOOR: {
+      return Object.freeze({
+        ...state,
+        waitingFloorSet: {
+          ...state.waitingFloorSet,
+          downFloor: new Set([...state.waitingFloorSet.downFloor]).add(action.floor),
+        },
       });
     }
     case liftActions.MOVE_UP: {
@@ -69,11 +86,31 @@ export default function liftReducer(state = defaultState, action) {
       });
     }
     case liftActions.REACHED_FLOOR: {
-      const newWaitingFloor = new Set([...state.waitingFloor]);
+      if (state.liftState === liftStateEnum.MOVING_UP) {
+        const newWaitingFloor = new Set([...state.waitingFloorSet.upFloor]);
+        newWaitingFloor.delete(action.floor);
+        return Object.freeze({
+          ...state,
+          waitingFloorSet: {
+            ...state.waitingFloorSet,
+            upFloor: newWaitingFloor,
+          },
+        });
+      }
+      const newWaitingFloor = new Set([...state.waitingFloorSet.downFloor]);
       newWaitingFloor.delete(action.floor);
       return Object.freeze({
         ...state,
-        waitingFloor: newWaitingFloor,
+        waitingFloorSet: {
+          ...state.waitingFloorSet,
+          downFloor: newWaitingFloor,
+        },
+      });
+    }
+    case liftActions.SET_LIFT_STATE: {
+      return Object.freeze({
+        ...state,
+        liftState: action.state,
       });
     }
     case reducerActions.RESET: {

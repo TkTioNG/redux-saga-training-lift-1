@@ -11,6 +11,7 @@ import {
 import * as liftActions from '../actions/liftActions';
 import buttonsEnum from '../enums/buttonsEnum';
 import doorStateEnum from '../enums/doorStateEnum';
+import liftStateEnum from '../enums/liftStateEnum';
 import sensorStateEnum from '../enums/sensorStateEnum';
 
 function* getStartingFloor() {
@@ -26,9 +27,18 @@ function* getStartingFloor() {
 
 function* getDestinationFloor({ startingFloor }) {
   const maximumFloor = yield select(state => state.lift.maximumFloor);
-  /* Passengers from higher floors are always going to the ground floor. */
+  /* Passengers from higher floors have 60% chance to the ground floor. */
   if (startingFloor > 0) {
-    return 0;
+    if (Math.random() > 0.4) {
+      return 0;
+    }
+    let destinationFloor = Math.round(Math.random() * (maximumFloor - 1)) + 1;
+    while (destinationFloor === startingFloor) {
+      destinationFloor = Math.round(Math.random() * (maximumFloor - 1)) + 1;
+    }
+
+    /* Or 40% to go to any other floor. */
+    return destinationFloor;
   }
 
   /* Passengers from the ground floor are always going to any other floor. */
@@ -36,7 +46,7 @@ function* getDestinationFloor({ startingFloor }) {
 }
 
 function* pressUpDownButton({ startingFloor }) {
-  /* Passengers from the fround floor move up, passengers from other floors move down. */
+  /* Passengers from the ground floor move up, passengers from other floors move down. */
   if (startingFloor === 0) {
     yield put(liftActions.buttonPress({
       button: buttonsEnum.CALL_UP,
@@ -60,7 +70,7 @@ function* pressFloorButton({ destinationFloor }) {
   }));
 }
 
-function* awaitLift({ floor }) {
+function* awaitLift({ floor, goUp }) {
   const doorState = yield select(state => state.lift.doorState);
   if (doorState !== doorStateEnum.OPEN) {
     yield take(liftActions.OPEN_DOOR);
@@ -70,6 +80,14 @@ function* awaitLift({ floor }) {
   if (currentFloor !== floor) {
     yield take(liftActions.CLOSE_DOOR);
     yield awaitLift({ floor });
+  } else if (goUp != null) {
+    /* Do not enter lift if the direction is incorrect. */
+    const liftState = yield select(state => state.lift.liftState);
+    const waitingState = goUp ? liftStateEnum.MOVING_UP : liftStateEnum.MOVING_DOWN;
+    if (waitingState !== liftState) {
+      yield take(liftActions.CLOSE_DOOR);
+      yield awaitLift({ floor });
+    }
   }
 }
 
@@ -156,7 +174,7 @@ function* addPassenger() {
   /* Passenger presses button. */
   yield pressUpDownButton({ startingFloor });
   /* Passengers waits and enters the lift. */
-  yield processPassengerOutside({ startingFloor });
+  yield processPassengerOutside({ startingFloor, goUp: destinationFloor > startingFloor });
   /* Passenger presses floor button. */
   yield pressFloorButton({ destinationFloor });
   /* Passenger waits and leaves the lift. */
