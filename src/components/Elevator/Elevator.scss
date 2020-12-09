@@ -1,0 +1,42 @@
+@import "../../scss/_base";
+
+@mixin transition($property) {
+  -webkit-transition: $property;
+  -moz-transition: $property;
+  -o-transition: $property;
+  transition: $property;
+}
+
+.elevator {
+  @extend %base-container;
+  position: absolute;
+  opacity: 70%;
+  z-index: 100;
+  // lift moving animation
+  @include transition(bottom 4s linear);
+
+  .leftDoor,
+  .rightDoor {
+    height: 100%;
+    width: 45px;
+    background-color: red;
+    // open door animation
+    @include transition(margin 0.8s ease-in-out);
+  }
+
+  .leftDoor {
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    &.open {
+      margin-right: 20px;
+    }
+  }
+
+  .rightDoor {
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    &.open {
+      margin-left: 20px;
+    }
+  }
+}

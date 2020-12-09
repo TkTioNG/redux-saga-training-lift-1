@@ -1,11 +1,15 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 
+import Elevator from '../Elevator';
+import Floor from '../Floor';
+
 import doorStateEnum from '../../enums/doorStateEnum';
 import sensorStateEnum from '../../enums/sensorStateEnum';
 
-import logo from './logo.svg';
 import './App.css';
+
+const liftFloors = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
 
 function App() {
   const error = useSelector(state => state.error.error);
@@ -28,8 +32,7 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+      <div className="App-content">
         {error && (
           <div>
             <p>The lift is broken.</p>
@@ -44,8 +47,17 @@ function App() {
             <p>{`The doors are ${doorStateCaption} and ${sensorStateCaption}.`}</p>
           </div>
         )}
-        <p>Find more in README.md</p>
-      </header>
+      </div>
+      <div className="App-content">
+        <div className="flex">
+          <div className="floor-holder">
+            {liftFloors.map(liftFloor => (
+              <Floor key={liftFloor} floor={liftFloor} />
+            ))}
+            <Elevator floor={currentFloor} open={doorState === doorStateEnum.OPEN} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

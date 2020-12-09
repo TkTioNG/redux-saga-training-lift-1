@@ -1,0 +1,18 @@
+// .floor {
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   width: 90px;
+//   height: 50px;
+//   background-color: #4ab;
+//   margin: 10px 0 0 0;
+//   border-radius: 3px;
+//   box-shadow: 1px 3px 2px 1px rgba(0, 0, 0, 0.3);
+// }
+
+@import "../../scss/_base";
+
+.floor {
+  @extend %base-container;
+  background-color: #4ab;
+}
